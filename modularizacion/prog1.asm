@@ -19,12 +19,12 @@
     call desplegar
     
     call leer                                   ;se lee el segundo valor
-    add ax, bx                                  ;AX = AX+ valor leido
+    add ax, bx                                  ;AX = AX+ valor leido   
+    
+    AAA						                    ;Ajuste despues de la suma
     
     lea dx, msgSalida                           ;Parametro de la funcion desplegar
     call desplegar
-    
-    AAM						                    ;ajusta el numero enpaquetado en un byte a 4 digitos hexadecimales
     
     mov dl, ah				                    ;mostramos el primer digito     
 	call displayNumero	
@@ -53,16 +53,16 @@ desplegar PROC NEAR
 desplegar ENDP 
  
 ;======== leer ===========
-;lee un caracter del teclado y lo convierte a valor numerico
+;lee un caracter del teclado
 ;Devuelve: 
-;bx: valor numerico leido  
+;bx: caracter leido  
 ;============================== 
 leer PROC NEAR 
      push ax   
      
      mov ah, 01h 
-     int 21h
-     sub al, 30h   
+     int 21h 
+     cbw 
      mov bx, ax 
      
      pop ax  
