@@ -4,7 +4,7 @@
 .MODEL SMALL			 						;se selecciona el modelo SMALL
 .STACK 				 							;se define el segmento de pila
 .DATA 					 						;comienza el segmento de datos
-	msgPedir1 DB 7,10,13,"Ingresa el valor #1 ","$" 		;se definen los mensajes al usuario 
+	msgPedir1 DB 7,10,13,"Ingresa el valor #1 ","$" 		 
 	msgPedir2 DB 7,10,13,"Ingresa el valor #2 ","$"
 	msgSalida DB 7,10,13,"El resultado es: ","$"
 .CODE					 						;inicia segmento de codigo
@@ -60,10 +60,10 @@ desplegar ENDP
 leer PROC NEAR 
      push ax   
      
-     mov ah, 01h 
+     mov ah, 01h 								;funcion 01h para leer caracteres del teclado
      int 21h 
-     cbw 
-     mov bx, ax 
+     cbw 										;se extiende el caractere leido en AL a todo el byte AX (AH=0)
+     mov bx, ax     
      
      pop ax  
      ret
@@ -75,11 +75,11 @@ leer ENDP
 ;dl: numero a desplegar  
 ;==============================
 displayNumero proc NEAR
-		push ax 									;salvamos cualquier dato del usuario
-		mov ah, 02h									;seleccionamos el servicio 02h para escritura de un caracter
-		add dl, 30H									;convertimos el numero a ASCII antes de mostrarlo 
+		push ax 								;salvamos cualquier dato del usuario
+		mov ah, 02h								;seleccionamos el servicio 02h para escritura de un caracter
+		add dl, 30H								;convertimos el numero a ASCII antes de mostrarlo 
 		int 21h
-		pop ax										;recuperamos los datos del usuario
+		pop ax									;recuperamos los datos del usuario
 		ret
 displayNumero endp
 
