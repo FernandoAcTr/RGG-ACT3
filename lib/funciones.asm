@@ -1,10 +1,10 @@
-;=========== leerNumStr ============
+;=========== readNumStr ============
 ;lee una cadena de maximo 3 caracteres 
 ;y los deposita en un buffer
 ;Parametros:
 ;bx: dezplazamiento del buffer
 ;===================================
-leerNumStr proc near  
+readNumStr proc near  
     push cx
     push ax  
     push si
@@ -28,7 +28,7 @@ leerNumStr proc near
 	pop cx  	
 	ret
 
-endp leerNumStr
+endp readNumStr
 
 ;=========== readStr ============
 ;lee una cadena de caracteres 

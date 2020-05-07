@@ -1,9 +1,9 @@
-;=========== Macro displayCadena ============
+;=========== Macro displayString ============
 ;despliega una cadena por pantalla
 ;Parametros: 
 ;cadena: cadena en la memoria
 ;===================================
-DisplayCadena macro cadena 
+displayString macro cadena 
 	push ax 						;salvamos cualquier dato del usuario 
 	push bx 
 	lea dx, cadena
@@ -13,17 +13,32 @@ DisplayCadena macro cadena
 	pop ax							;recuperamos los datos del usuario
 endm
        
-;=========== Macro leerNum ============
+;=========== Macro readNum ============
 ;lee un digito del teclado 
 ;Devuelve:
 ;BL: numero leido del teclado en decimal
 ;===================================
-leerNum macro    
+readNum macro    
     push ax   
   
     mov AH, 01h     ;servicio de lectura de caracter
     int 21h  
     sub al, 30h  
+    mov bl, al    
+    
+    pop ax 	
+endm 
+
+;=========== Macro readChar ============
+;lee un caracter ASCII del teclado
+;Devuelve:
+;BL: numero leido del teclado en decimal
+;===================================
+readChar macro    
+    push ax   
+  
+    mov AH, 01h     ;servicio de lectura de caracter
+    int 21h   
     mov bl, al    
     
     pop ax 	
