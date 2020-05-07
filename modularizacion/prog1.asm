@@ -10,21 +10,21 @@
 .CODE					 						;inicia segmento de codigo
 .STARTUP				 						;se inicializa el registro de datos
 	lea dx, msgPedir1                           ;Parametro de la funcion
-    call desplegar  
+    call displayString  
     
-    call leer                                   ;leemos el primer valor
+    call readChar                               ;leemos el primer valor
     mov ax, bx                                  ;AX = valor leido
     
     lea dx, msgPedir2                           ;Parametro de la funcion desplegar
-    call desplegar
+    call displayString
     
-    call leer                                   ;se lee el segundo valor
+    call readChar                               ;se lee el segundo valor
     add ax, bx                                  ;AX = AX+ valor leido   
     
     AAA						                    ;Ajuste despues de la suma
     
     lea dx, msgSalida                           ;Parametro de la funcion desplegar
-    call desplegar
+    call displayString
     
     mov dl, ah				                    ;mostramos el primer digito     
 	call displayNumero	
@@ -36,38 +36,40 @@
 .EXIT											;salida del DOS  
 
 
-;======== desplegar ===========
+;======== displayString ===========
 ;despliega una cadena de texto en pantalla
 ;Parametros 
 ;dx: dezplazamiento de la cadena a desplegar  
 ;==============================
-desplegar PROC NEAR
+displayString PROC NEAR
     push ax
     
-    mov ah,09h									;se elije la funcion 09h para desplegar cadenas
+    mov ah,09h	 ;se elije la funcion 09h para desplegar cadenas
 	int 21h
 	 
 	pop ax
           
-    ret                                         ;instruccion de retorno
-desplegar ENDP 
+    ret          ;instruccion de retorno
+displayString ENDP
+
  
-;======== leer ===========
-;lee un caracter del teclado
+;======== readChar ===========
+;lee un caracter ASCII del teclado
 ;Devuelve: 
 ;bx: caracter leido  
 ;============================== 
-leer PROC NEAR 
+readChar PROC NEAR 
      push ax   
      
-     mov ah, 01h 								;funcion 01h para leer caracteres del teclado
+     mov ah, 01h 	;funcion 01h para leer caracteres del teclado
      int 21h 
-     cbw 										;se extiende el caractere leido en AL a todo el byte AX (AH=0)
+     cbw 			;se extiende el caractere leido en AL a todo el byte AX (AH=0)
      mov bx, ax     
      
      pop ax  
      ret
-leer ENDP   
+readChar ENDP  
+
             
 ;======== displayNumero ===========
 ;despliega un caracter ASCCI como su valor numerico
