@@ -36,7 +36,8 @@
     mov ah, 09h  		;se elije la funcion 09h para despliegue de cadenas
 	lea dx, msgFaren	;se carga la direccion de la cadena a desplegar
 	int 21h				;llamada a la interrupcion 21h para desplegar el mensaje
-	lea dx, result  	;se carga la direccion de la cadena a desplegar
+	lea dx, result
+	  	;se carga la direccion de la cadena a desplegar
 	int 21h				;llamada a la interrupcion 21h para desplegar el mensaje   
     
 .exit
