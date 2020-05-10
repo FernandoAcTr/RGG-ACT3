@@ -1,3 +1,6 @@
+
+;========================================= IMPRESION DE CADENAS =======================
+
 ;=========== Macro print ============
 ;despliega una cadena por pantalla
 ;Parametros: 
@@ -5,20 +8,20 @@
 ;===================================
 print macro cadena 
 	push ax 						;salvamos cualquier dato del usuario 
-	push bx 
+	push dx 
 	lea dx, cadena
 	mov ah,09h
 	int 21h        
-	pop bx
+	pop dx
 	pop ax							;recuperamos los datos del usuario
 endm
 
-;======== printNum ===========
-;despliega un numero en pantalla
+;======== printDigit ===========
+;despliega un numero del 1 al 9 en pantalla
 ;Parametros: 
 ;num: numero a desplegar  
 ;==============================
-printNum macro num
+printDigit macro num
 	push ax      	;salvamos cualquier dato del usuario
 	push dx
 
@@ -31,12 +34,13 @@ printNum macro num
 	pop ax			;recuperamos los datos del usuario
 endm
        
+; ========================================= LECTURA =========================================	   
 ;=========== Macro readNum ============
 ;lee un digito del teclado 
 ;Devuelve:
 ;BL: numero leido del teclado en decimal
 ;===================================
-readNum macro    
+readDigit macro    
     push ax   
   
     mov AH, 01h     ;servicio de lectura de caracter
@@ -61,6 +65,8 @@ readChar macro
     
     pop ax 	
 endm 
+
+;========================================= CONVERSION DE NUMEROS ================================
 
 ; ================= Macro ITOA ===================== 
 ; Convierte un valor numerico a una cadena de caracteres
@@ -176,5 +182,101 @@ atoi_1:
   pop ax	  ;recuperamos los datos del usuario
            
 endm 
+
+
+;=========================================================== MANEJO DE ARCHIVOS =====================================
+
+;============== Macro openFile ==========
+;abre un fichero de texto
+;Parametros 
+;modo: 0h solo lectura, 1h solo escritura, 2h lectura y escritura            
+;filename: nombre en memoria del fichero     
+;handler: word en memoria en donde depositar el handle
+;Devuelve 
+;handler: manejador numerico del fichero 
+;ax: 1 si hubo error, 0 si no hubo error 
+;===============================
+openFile macro filename,modo,handler 
+    local error, fin ;se definen etiquetas locales a la macro 
+    push dx ;se salvan datos anteriores
+     
+    mov ah,3dh ;interrupcion para abrir el archivo
+    mov al,modo  ;0h solo lectura, 1h solo escritura, 2h lectura y escritura
+    lea dx, filename ;cargamos el nombre del archivo
+    int 21h
+    jc error: ;si hubo error al abrir CF = 1
+     
+    mov handler,ax 
+    mov ax, 0
+    jmp fin ;si no hubo error ve al final de la macro 
+  
+    error: 
+    mov ax, 1
+    
+    fin:
+    pop dx
+endm
+
+;============== Macro readFile ==========
+;abre un fichero de texto
+;Parametros 
+;numbytes: numero de bytes a leer del fichero           
+;buffer: buffer en se depositaran los caracteres leidos   
+;handler: word en memoria en donde existe un handle
+;Devuelve 
+;buffer: buffer lleno con los caracteres leidos
+;ax: 1 si hubo error, 0 si no hubo error 
+;===============================
+readFile macro numbytes,buffer,handler    
+    local error, fin ;se definen etiquetas locales a la macro  
+    push bx  ;se salvan datos anteriores  
+    push cx
+    push dx
+    
+    mov ah,3fh   ;interrupcion de lectura de fichero
+    mov bx,handler ;se carga el manejador
+    mov cx,numbytes ;se carga el numero de bytes a leer
+    lea dx,buffer ;se carga el buffer 
+    int 21h
+    jc error: ;si hubo error al abrir CF = 1  
+    mov ax, 0h
+    jmp fin ;si no hubo error ve al final de la macro 
+  
+    error: 
+    mov ax, 1
+    
+    fin: 
+    pop dx
+    pop cx
+    pop bx
+
+endm    
+
+;================= Macro closeFile ==============
+;Cierra un fichero abierto y libera el handler para
+;otro fichero
+;Parametros
+;handler: el handler en memoria del fichero abierto
+;Devuelve: 
+;ax: 1 si hubo error, 0 si no hubo error 
+;================================================
+closeFile macro handler
+    local error, fin ;etiquetas locales
+    push bx ;salvar datos anteriores
+    
+    mov ah,3eh
+    mov bx,handler
+    int 21h
+    
+    jc error: ;si hubo error al abrir CF = 1
+    mov ax, 0h
+    jmp fin ;si no hubo error ve al final de la macro 
+  
+    error: 
+    mov ax, 1h
+    
+    fin: 
+    pop bx
+endm
 
 

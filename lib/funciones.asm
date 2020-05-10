@@ -1,3 +1,5 @@
+;=========================================== LECTURA DE CADENAS ===============================
+
 ;=========== readNumStr ============
 ;lee una cadena de maximo 3 caracteres 
 ;y los deposita en un buffer
@@ -62,9 +64,80 @@ readStr proc near
 
 endp readStr
 
-      
+;======== readChar ===========
+;lee un caracter ASCII del teclado
+;Devuelve: 
+;bx: caracter leido  
+;============================== 
+readChar PROC NEAR 
+     push ax   
+     
+     mov ah, 01h 	;funcion 01h para leer caracteres del teclado
+     int 21h 
+     cbw 			;se extiende el caractere leido en AL a todo el byte AX (AH=0)
+     mov bx, ax     
+     
+     pop ax  
+     ret
+readChar ENDP  
 
 
+;======== readNum ===========
+;lee un numero ASCII del teclado y regresa como decimal
+;Devuelve: 
+;bx: numero leido  
+;============================== 
+readDigit PROC NEAR 
+     push ax   
+     
+     mov ah, 01h 	;funcion 01h para leer caracteres del teclado
+     int 21h 
+     sub al, 30h	;convertir a decimal
+     mov bx, ax     
+     
+     pop ax  
+     ret
+readDigit ENDP  
+
+ 
+;=============================================== IMPRESION DE CADENAS ================================= 
+
+;======== print ===========
+;despliega una cadena de texto en pantalla
+;Parametros 
+;dx: dezplazamiento de la cadena a desplegar  
+;==============================
+print PROC NEAR
+    push ax
+    
+    mov ah,09h	 ;se elije la funcion 09h para desplegar cadenas
+	int 21h
+	 
+	pop ax
+          
+    ret          ;instruccion de retorno
+print ENDP
+
+
+
+;======== printDigit ===========
+;despliega un numero del 0 al 9 en pantalla
+;Parametros: 
+;dl: numero a desplegar  
+;==============================
+printDigit proc NEAR
+	push ax      	;salvamos cualquier dato del usuario
+		
+	mov ah, 02h		;seleccionamos el servicio 02h para escritura de un caracter
+	add dl, 30H		;convertimos el numero a ASCII antes de mostrarlo 
+	int 21h
+
+	pop ax			;recuperamos los datos del usuario
+	ret
+printDigit endp 
+
+
+;=============================================== CONVERSION DE NUMEROS ===========================
 ; ========= Funcion ATOI ===========
 ; Parametros
 ; si: offset inicial de la cadena con respecto a DS    
@@ -168,78 +241,6 @@ itoa proc
   pop cx	  ; restauramos los datos del usuario
   ret
 itoa endp
-
-
-;======== print ===========
-;despliega una cadena de texto en pantalla
-;Parametros 
-;dx: dezplazamiento de la cadena a desplegar  
-;==============================
-print PROC NEAR
-    push ax
-    
-    mov ah,09h	 ;se elije la funcion 09h para desplegar cadenas
-	int 21h
-	 
-	pop ax
-          
-    ret          ;instruccion de retorno
-displayString ENDP
-
-
-
-;======== readChar ===========
-;lee un caracter ASCII del teclado
-;Devuelve: 
-;bx: caracter leido  
-;============================== 
-readChar PROC NEAR 
-     push ax   
-     
-     mov ah, 01h 	;funcion 01h para leer caracteres del teclado
-     int 21h 
-     cbw 			;se extiende el caractere leido en AL a todo el byte AX (AH=0)
-     mov bx, ax     
-     
-     pop ax  
-     ret
-readChar ENDP  
-
-
-;======== readNum ===========
-;lee un numero ASCII del teclado y regresa como decimal
-;Devuelve: 
-;bx: numero leido  
-;============================== 
-readNum PROC NEAR 
-     push ax   
-     
-     mov ah, 01h 	;funcion 01h para leer caracteres del teclado
-     int 21h 
-     sub al, 30h	;convertir a decimal
-     mov bx, ax     
-     
-     pop ax  
-     ret
-readNum ENDP  
-
-
-
-;======== displayNumero ===========
-;despliega un numero en pantalla
-;Parametros: 
-;dl: numero a desplegar  
-;==============================
-displayNumero proc NEAR
-	push ax      	;salvamos cualquier dato del usuario
-		
-	mov ah, 02h		;seleccionamos el servicio 02h para escritura de un caracter
-	add dl, 30H		;convertimos el numero a ASCII antes de mostrarlo 
-	int 21h
-
-	pop ax			;recuperamos los datos del usuario
-	ret
-displayNumero endp 
 
 
 
