@@ -1,9 +1,9 @@
-;=========== Macro displayString ============
+;=========== Macro print ============
 ;despliega una cadena por pantalla
 ;Parametros: 
 ;cadena: cadena en la memoria
 ;===================================
-displayString macro cadena 
+print macro cadena 
 	push ax 						;salvamos cualquier dato del usuario 
 	push bx 
 	lea dx, cadena
@@ -11,6 +11,24 @@ displayString macro cadena
 	int 21h        
 	pop bx
 	pop ax							;recuperamos los datos del usuario
+endm
+
+;======== printNum ===========
+;despliega un numero en pantalla
+;Parametros: 
+;num: numero a desplegar  
+;==============================
+printNum macro num
+	push ax      	;salvamos cualquier dato del usuario
+	push dx
+
+	mov dl, num
+	mov ah, 02h		;seleccionamos el servicio 02h para escritura de un caracter
+	add dl, 30H		;convertimos el numero a ASCII antes de mostrarlo 
+	int 21h
+
+	pop dx
+	pop ax			;recuperamos los datos del usuario
 endm
        
 ;=========== Macro readNum ============

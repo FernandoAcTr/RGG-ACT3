@@ -170,12 +170,12 @@ itoa proc
 itoa endp
 
 
-;======== displayString ===========
+;======== print ===========
 ;despliega una cadena de texto en pantalla
 ;Parametros 
 ;dx: dezplazamiento de la cadena a desplegar  
 ;==============================
-displayString PROC NEAR
+print PROC NEAR
     push ax
     
     mov ah,09h	 ;se elije la funcion 09h para desplegar cadenas
