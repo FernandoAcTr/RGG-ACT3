@@ -19,7 +19,7 @@ INCLUDE macros.lib
 	leerNum
 	mov bh,0	
 	
-	;Aplicamos el factorial. El nesultado queda en AX al final
+	;Aplicamos el factorial. El resultado queda en AX al final
 	mov ax, bx						;ponemos el numero en el acumulador
 	mov cx, bx
 	dec cx							;el ciclo se repite N-1 veces. La primera entrada cuenta como una repeticion 

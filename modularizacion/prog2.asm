@@ -20,20 +20,20 @@
 	lea dx, msgPedir
 	int 21h
 
-    lea bx, strNum      ;parametros por registro
-    call leerNumStr     ;leer la cadena de numeros
+    lea bx, strNum     ;parametros por registro
+    call leerNumStr    ;leer la cadena de numeros
       
-    lea si, strNum      ;parametros por registro
-    call atoi           ;convertir a numero con atoi  
+    lea si, strNum     ;parametros por registro
+    call atoi          ;convertir a numero con atoi  
     
-    push bx             ;paso de parametros por pila
+    push bx            ;paso de parametros por pila
     call convertir
     
-    mov ax, bx          ;paso de parametros por registros
+    mov ax, bx         ;paso de parametros por registros
     lea bx, result
     call itoa
     
-    mov ah, 09h  		;se elije la funcion 09h para despliegue de cadenas
+    mov ah, 09h  	;se elije la funcion 09h para despliegue de cadenas
 	lea dx, msgFaren	;se carga la direccion de la cadena a desplegar
 	int 21h				;llamada a la interrupcion 21h para desplegar el mensaje
 	lea dx, result
@@ -55,18 +55,18 @@ leerNumStr proc near
     push si
     
     mov cx, 3  
-	xor si,si                       ;si = 0
+	xor si,si    ;si = 0
 	leer:    	    
-        mov AH, 01h                 ;servicio de lectura de caracter
+        mov AH, 01h  ;servicio de lectura de caracter
         int 21h                     
-        cmp al, 0dh                 ;al == enter ? 
+        cmp al, 0dh   ;al == enter ? 
         je  enter                   
-        mov [bx+si], al          ;se coloca el caracter leido en el buffer
-        inc si                      ;incrementamos la posicion del buffer
+        mov [bx+si], al ;se coloca el caracter leido en el buffer
+        inc si     ;incrementamos la posicion del buffer
     loop leer
     
     enter:
-    mov [bx+si], "$"             ;se adiciona un simbolo de final de cadena
+    mov [bx+si], "$" ;se adiciona un simbolo de final de cadena
      
 	pop si
 	pop ax
