@@ -93,6 +93,27 @@ readStr macro numBytes, buffer
 
 endm 
 
+;======================== Macro flush ====================
+;Limpia el contenido de un buffer de texto            
+;Parametros: 
+;buffer: buffer que se desea limpiar
+;numBytes: numero de bytes a desechar
+;=========================================================
+flush macro numBytes, buffer 
+    push cx
+    push si
+    push ax
+     
+    mov cx, numBytes ;se cargan el numero de bytes
+    lea di, buffer ;se direcciona el buffer para STOSB
+    mov al, '$' ;caracter con el que se limpiara el buffer
+    rep stosb  ;almacena AL en [SI] e incrementa SI 
+    
+    pop ax
+    pop si
+    pop cx
+endm
+
 ;=========== Macro readFileName ============
 ;lee una cadena de caracteres (nombre del fichero)
 ;y los deposita en un buffer
@@ -324,7 +345,38 @@ writeFile macro numbytes,buffer,handler
     pop dx
     pop cx
     pop bx
-endm 
+endm  
+
+;================= Macro renameFile ==============
+;Renombra un fichero
+;Parametros
+;oldName: El nombre actual del archivo
+;newName: El nuevo nombre del archivo
+;Devuelve: 
+;ax: 1 si hubo error, 0 si no hubo error 
+;================================================
+renameFile macro oldName, newName  
+    local error, fin ;etiquetas locales
+    push ax
+    push dx
+    push di
+    
+    lea dx, oldName ;se cargan los nombres      
+    lea di, newName
+    mov ah, 56h ;funcion para renombrar ficheros
+    int 21h 
+    jc error: ;si hubo error al borrar CF = 1
+    mov ax, 0h
+    jmp fin ;si no hubo error ve al final de la macro 
+  
+    error: 
+    mov ax, 1h
+    
+    fin: 
+    pop di
+    pop dx
+    pop ax    
+endm  
 
 .model small
 .stack
@@ -351,22 +403,28 @@ endm
     opc7 db 7,10,13, 'Opcion: ','$' 
     
     ;nombre del archivo
-    opNombre db 7,10,13, 'Nombre del archivo: ','$' 
+    opNombre db 7,10,13, 'Nombre del archivo: ','$'
+    opNewNombre db 7,10,13, 'Nuevo nombre del archivo: ','$' 
     
     ;mensajes al usuario
     msgError db 7,10,10,13, 'El archivo no existe',10,'$'
-    msgExito db 7,10,10,13, 'Archivo creado con exito',10,'$' 
+    msgExito db 7,10,10,13, 'Archivo creado con exito',10,'$'  
+    msgRenameExito db 7,10,10,13, 'Archivo renombrado con exito',10,'$'
     msgDelExito db 7,10,10,13, 'Archivo eliminado con exito',10,'$'
     msgEsc db 7,10,10,13, 'Confirme su edicion con ta tecla ESC',10,'$'
     msgFin db 10,13,'Programa Terminado','$'
     
     ;variables del archivo
-    file db 20 dup(?),  ;nombre del archivo
+    file db 20 dup(?),  ;nombre del archivo 
+    newFile db 20 dup(?),  ;nombre del nuevo archivo usado para renombrar
     handler dw ?   
     buffer db 1000 dup('$'),'$' ;buffer con un amplio espacio para el texto leido
 
 .code 
 .startup  
+    mov ax, @data
+	mov es, ax ;es = ds lo requiere la instruccion STOSB de flush
+	
     ;Encabezado
     print cabeza1 
     print cabeza2
@@ -417,7 +475,12 @@ endm
         print msgExito  ;imprimir un mensaje      
         jmp menu
         
-    leer: 
+    leer:
+        ;limpiamos el buffer
+        lea si, buffer
+        call size
+        flush cx, buffer    
+     
         call pedir   ;pedir el nombre del fichero
         openFile file,0h,handler  ;abrir el fichero en solo lectura
         cmp ax, 1 ; si hubo error         
@@ -426,13 +489,21 @@ endm
         readFile 1000,buffer,handler   ;leer el fichero 
         printChar 10   ;se imprime un salto de linea 
         printChar 10  
-        printChar 13   ;se imprime un retorno de linea
+      
         print buffer    ;imprimir el buffer
+        printChar 10   ;se imprime un salto de linea 
+        printChar 10     
+        
         closeFile handler ;cerrar el fichero 
         lea si, buffer ;linea de depuracion no util al programa      
         jmp menu
         
-    modificar:
+    modificar:   
+        ;limpiamos el buffer
+        lea si, buffer
+        call size
+        flush cx, buffer    
+    
         call pedir  ;pedir el nombre del fichero
         openFile file,2h,handler  ;abrir el fichero en lectura y escritura
         cmp ax, 1 ; si hubo error         
@@ -443,15 +514,13 @@ endm
          
         printChar 10   ;se imprime un salto de linea
         printChar 10
-        ;printChar 13   ;se imprime un retorno de linea 
-        
+               
         print buffer    ;imprimir el buffer
         print msgEsc    ;indicacion al usuario
         
-        printChar 10   ;se imprime un salto de linea
-        ;printChar 13   ;se imprime un retorno de linea
-        
-        readStr 1000, buffer ;se pide al usuario el nuevo texto
+        printChar 10   ;se imprime un salto de linea 
+                
+        readStr 1000, buffer ;se pide al usuario el nuevo texto maximo 1000 bytes
         
         ;se cuenta el numero efectivo de bytes escritos por el usuario
         lea si,buffer
@@ -472,7 +541,16 @@ endm
         jmp menu
         
     renombrar:
-        mov ax, 5
+        call pedir   ;pedir el nombre del fichero
+        print opNewNombre
+        readFileName 20,newFile  ;pedir el nuevo nombre del fichero    
+        
+        renameFile file, newFile    
+        cmp ax, 1 ; si hubo error         
+        je error  
+        
+        print msgRenameExito ;mensaje al usuario
+        
         jmp menu
         
     jmp menu
