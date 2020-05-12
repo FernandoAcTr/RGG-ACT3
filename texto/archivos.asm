@@ -68,11 +68,13 @@ readStr macro numBytes, buffer
         jmp noback
         
         enter:
-        mov [bx+si], 0dh ;se coloca un enter en el buffer
+        mov [bx+si], 10 ;se coloca un enter en el buffer
         inc si
         mov [bx+si], 13 ;se coloca un retorno
-        inc si
+        inc si  
+        printChar 10  ;se imprime el enter para que se vea reflejado en pantalla
         jmp noback
+       
         
         back:
         inc cx ;la tecla back no cuenta como caracter leido 
@@ -383,9 +385,9 @@ endm
     print opc3
     print opc4
     print opc5
-    print opc6 
-    print opc7
-    
+    print opc6   
+    print opc7   
+      
     ;leer la opc del usuario
     call readChar  
     cmp bx,31h
@@ -422,11 +424,12 @@ endm
         je error        
         
         readFile 1000,buffer,handler   ;leer el fichero 
-        printChar 10   ;se imprime un salto de linea
+        printChar 10   ;se imprime un salto de linea 
+        printChar 10  
         printChar 13   ;se imprime un retorno de linea
         print buffer    ;imprimir el buffer
         closeFile handler ;cerrar el fichero 
-        lea si, buffer       
+        lea si, buffer ;linea de depuracion no util al programa      
         jmp menu
         
     modificar:
@@ -439,13 +442,14 @@ endm
         readFile 1000,buffer,handler   ;leer el fichero
          
         printChar 10   ;se imprime un salto de linea
-        printChar 13   ;se imprime un retorno de linea 
+        printChar 10
+        ;printChar 13   ;se imprime un retorno de linea 
         
         print buffer    ;imprimir el buffer
         print msgEsc    ;indicacion al usuario
         
         printChar 10   ;se imprime un salto de linea
-        printChar 13   ;se imprime un retorno de linea
+        ;printChar 13   ;se imprime un retorno de linea
         
         readStr 1000, buffer ;se pide al usuario el nuevo texto
         
