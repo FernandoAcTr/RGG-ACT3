@@ -40,18 +40,27 @@ endp readNumStr
 ;cx: numero maximo de caracteres del buffer
 ;===================================
 readStr proc near  
-    push cx
+    
     push ax  
     push si
    
 	xor si,si                       ;si = 0
 	leer:    	    
-        mov AH, 01h                 ;servicio de lectura de caracter
+        mov AH, 01h   ;servicio de lectura de caracter
         int 21h                     
-        cmp al, 0dh                 ;al == enter ? 
-        je  enter                   
-        mov [bx+si], al          ;se coloca el caracter leido en el buffer
-        inc si                      ;incrementamos la posicion del buffer
+        cmp al, 0dh   ;al == enter ? 
+        je  enter
+        cmp al, 08h ;al == tecla back
+        je back
+                           
+        mov [bx+si], al ;se coloca el caracter leido en el buffer
+        inc si          ;incrementamos la posicion del buffer
+        jmp noback
+        
+        back:
+        inc cx ;la tecla back no cuenta como caracter leido
+        
+        noback:        
     loop leer
     
     enter:
@@ -59,7 +68,7 @@ readStr proc near
      
 	pop si
 	pop ax
-	pop cx  	
+	  	
 	ret
 
 endp readStr
@@ -135,6 +144,31 @@ printDigit proc NEAR
 	pop ax			;recuperamos los datos del usuario
 	ret
 printDigit endp 
+
+
+;======== size ===========
+;obtiene la longitud efectiva de un buffer de texto
+;Parametros      
+;SI: offset del buffer
+;Devuelve: 
+;cx: longitud del buffer  
+;==============================
+size proc near
+   push ax
+   
+   xor cx,cx 
+   init:
+    lodsb  ;lee el primer byte e incrementa si
+    cmp al, '$' ; al == $ 
+    je final 
+    inc cx      ; incrementa cx
+   jmp init
+   
+   final:
+   ;dec cx ;descuenta el ultimo caracter
+   pop ax
+   ret 
+size endp
 
 
 ;=============================================== CONVERSION DE NUMEROS ===========================

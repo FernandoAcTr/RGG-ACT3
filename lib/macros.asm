@@ -33,6 +33,23 @@ printDigit macro num
 	pop dx
 	pop ax			;recuperamos los datos del usuario
 endm
+
+;======== printChar ===========
+;despliega un caracter en pantalla
+;Parametros: 
+;char: caracter a desplegar  
+;==============================
+printChar macro char
+	push ax      	;salvamos cualquier dato del usuario
+	push dx
+
+	mov dl, char
+	mov ah, 02h		;seleccionamos el servicio 02h para escritura de un caracter
+	int 21h
+
+	pop dx
+	pop ax			;recuperamos los datos del usuario
+endm
        
 ; ========================================= LECTURA =========================================	   
 ;=========== Macro readNum ============
@@ -54,7 +71,7 @@ endm
 ;=========== Macro readChar ============
 ;lee un caracter ASCII del teclado
 ;Devuelve:
-;BL: numero leido del teclado en decimal
+;BL: caracter leido del teclado
 ;===================================
 readChar macro    
     push ax   
@@ -65,6 +82,74 @@ readChar macro
     
     pop ax 	
 endm 
+
+;=========== Macro readStr ============
+;lee una cadena de caracteres 
+;y los deposita en un buffer
+;Parametros:
+;buffer: dezplazamiento del buffer
+;numBytes: numero maximo de caracteres del buffer
+;===================================
+readStr macro numBytes, buffer  
+    local enter, leer, back, noback
+	push bx
+    push cx
+    push ax  
+    push si
+	
+	mov cx, numBytes
+	lea bx, buffer
+   
+	xor si,si        ;si = 0
+	leer:    	    
+        mov AH, 01h   ;servicio de lectura de caracter
+        int 21h                     
+        cmp al, 0dh   ;al == enter ? 
+        je  enter
+        cmp al, 08h ;al == tecla back
+        je back
+                           
+        mov [bx+si], al ;se coloca el caracter leido en el buffer
+        inc si          ;incrementamos la posicion del buffer
+        jmp noback
+        
+        back:
+        inc cx ;la tecla back no cuenta como caracter leido
+		dec si
+        
+        noback:        
+    loop leer
+    
+    enter:
+    mov [bx+si], "$"  ;se adiciona un simbolo de final de cadena
+     
+	pop si
+	pop ax
+	pop cx
+	pop bx
+
+endm 
+
+;======================== Macro flush ====================
+;Limpia el contenido de un buffer de texto            
+;Parametros: 
+;buffer: buffer que se desea limpiar
+;numBytes: numero de bytes a desechar
+;=========================================================
+flush macro numBytes, buffer 
+    push cx
+    push si
+    push ax
+     
+    mov cx, numBytes ;se cargan el numero de bytes
+    lea di, buffer ;se direcciona el buffer para STOSB
+    mov al, '$' ;caracter con el que se limpiara el buffer
+    rep stosb  ;almacena AL en [SI] e incrementa SI 
+    
+    pop ax
+    pop si
+    pop cx
+endm
 
 ;========================================= CONVERSION DE NUMEROS ================================
 
@@ -186,8 +271,88 @@ endm
 
 ;=========================================================== MANEJO DE ARCHIVOS =====================================
 
+;=========== Macro readFileName ============
+;lee una cadena de caracteres (nombre del fichero)
+;y los deposita en un buffer
+;Parametros:
+;buffer: dezplazamiento del buffer
+;numBytes: numero maximo de caracteres del buffer
+;===================================
+readFileName macro numBytes, buffer  
+    local enter, leer, back, noback
+	push bx
+    push cx
+    push ax  
+    push si
+	
+	mov cx, numBytes
+	lea bx, buffer
+   
+	xor si,si        ;si = 0
+	leer:    	    
+        mov AH, 01h   ;servicio de lectura de caracter
+        int 21h                     
+        cmp al, 0dh   ;al == enter ? 
+        je  enter
+        cmp al, 08h ;al == tecla back
+        je back
+                           
+        mov [bx+si], al ;se coloca el caracter leido en el buffer
+        inc si          ;incrementamos la posicion del buffer
+        jmp noback
+        
+        back:
+        inc cx ;la tecla back no cuenta como caracter leido
+        dec si
+        
+        noback:        
+    loop leer
+    
+    enter:
+    mov [bx+si], 0h  ;se adiciona un 0 al final del nombre del archivo
+     
+	pop si
+	pop ax
+	pop cx
+	pop bx
+
+endm    
+ 
+;============== Macro createFile ==========
+;Si el fichero indicado mediante la cadena ASCII ya existia, entonces se vacia su contenido.
+;Si el fichero no existia, entonces se crea
+;Parametros            
+;filename: nombre en memoria del fichero     
+;handler: word en memoria en donde depositar el handle
+;Devuelve 
+;handler: manejador numerico del fichero 
+;ax: 1 si hubo error, 0 si no hubo error 
+;===============================
+createFile macro fileName, handler  
+    local error, fin ;etiquetas locales
+    push cx
+    push dx
+    
+    mov ah,3ch ;funcion para la creacion de ficheros
+    mov cx,0 ;0H Fichero Normal. 01H Fichero de Sólo Lectura. 02H Fichero Oculto. 03H Fichero de Sistema.
+    lea dx, fileName
+    int 21h    
+    jc error ;si no se pudo crear  
+    
+    mov handler,ax 
+    mov ax, 0
+    jmp fin ;si no hubo error ve al final de la macro 
+    
+    error: 
+    mov ax, 1 
+    
+    fin:
+    pop dx
+    pop cx
+endm
+
 ;============== Macro openFile ==========
-;abre un fichero de texto
+;abre un fichero de texto y obtiene un handler
 ;Parametros 
 ;modo: 0h solo lectura, 1h solo escritura, 2h lectura y escritura            
 ;filename: nombre en memoria del fichero     
@@ -200,7 +365,7 @@ openFile macro filename,modo,handler
     local error, fin ;se definen etiquetas locales a la macro 
     push dx ;se salvan datos anteriores
      
-    mov ah,3dh ;interrupcion para abrir el archivo
+    mov ah,3dh ;funcion para abrir archivos
     mov al,modo  ;0h solo lectura, 1h solo escritura, 2h lectura y escritura
     lea dx, filename ;cargamos el nombre del archivo
     int 21h
@@ -218,7 +383,7 @@ openFile macro filename,modo,handler
 endm
 
 ;============== Macro readFile ==========
-;abre un fichero de texto
+;lee el contenido de un fichero de texto
 ;Parametros 
 ;numbytes: numero de bytes a leer del fichero           
 ;buffer: buffer en se depositaran los caracteres leidos   
@@ -264,8 +429,8 @@ closeFile macro handler
     local error, fin ;etiquetas locales
     push bx ;salvar datos anteriores
     
-    mov ah,3eh
-    mov bx,handler
+    mov ah,3eh ;funcion 3h para cerrar archivos 
+    mov bx,handler ;se carga el manejador del archivo
     int 21h
     
     jc error: ;si hubo error al abrir CF = 1
@@ -277,6 +442,96 @@ closeFile macro handler
     
     fin: 
     pop bx
-endm
+endm    
 
+;================= Macro deleteFile ==============
+;Elimina un fichero de texto
+;Parametros
+;nombre: nombre en memoria del fichero a borrar.
+;Devuelve: 
+;ax: 1 si hubo error, 0 si no hubo error 
+;================================================
+deleteFile macro nombre
+    local error, fin ;etiquetas locales
+    push dx ;salvar datos anteriores
+    
+    mov ah,41h  ;funcion 41h para borrar archivos
+    lea dx,nombre ;se carga el nombre del archivo a borrar
+    int 21h
+    
+    jc error: ;si hubo error al borrar CF = 1
+    mov ax, 0h
+    jmp fin ;si no hubo error ve al final de la macro 
+  
+    error: 
+    mov ax, 1h
+    
+    fin: 
+    pop dx
+endm   
+
+;================= Macro writeFile ==============
+;Escribe una cadena de texto sobre un archivo
+;Parametros
+;numbytes: numero de bytes a escribir
+;handler: manejador del fichero
+;buffer: buffer en memoria con el texto a escribir
+;Devuelve: 
+;ax: 1 si hubo error, 0 si no hubo error 
+;================================================
+writeFile macro numbytes,buffer,handler
+    local error, fin ;etiquetas locales
+    push bx ;salvar datos anteriores 
+    push cx
+    push dx
+    
+    mov ah,40h  ;funcion 40h para escribir ficheros
+    mov bx,handler ;se carga el manejador del fichero
+    mov cx, numbytes ;se cargan el numero de bytes a escribir
+    lea dx, buffer ;se carga la direccion del buffer
+    int 21h
+    
+    jc error: ;si hubo error al borrar CF = 1
+    mov ax, 0h
+    jmp fin ;si no hubo error ve al final de la macro 
+  
+    error: 
+    mov ax, 1h
+    
+    fin: 
+    pop dx
+    pop cx
+    pop bx
+endm  
+
+;================= Macro renameFile ==============
+;Renombra un fichero
+;Parametros
+;oldName: El nombre actual del archivo
+;newName: El nuevo nombre del archivo
+;Devuelve: 
+;ax: 1 si hubo error, 0 si no hubo error 
+;================================================
+renameFile macro oldName, newName  
+    local error, fin ;etiquetas locales
+    push ax
+    push dx
+    push di
+    
+    lea dx, oldName ;se cargan los nombres      
+    lea di, newName
+    mov ah, 56h ;funcion para renombrar ficheros
+    int 21h 
+    jc error: ;si hubo error al borrar CF = 1
+    mov ax, 0h
+    jmp fin ;si no hubo error ve al final de la macro 
+  
+    error: 
+    mov ax, 1h
+    
+    fin: 
+    pop di
+    pop dx
+    pop ax    
+endm  
 
