@@ -14,10 +14,85 @@ print macro cadena
 	int 21h        
 	pop dx
 	pop ax	;recuperamos los datos del usuario
-endm   
+endm 
+
+;======== printChar ===========
+;despliega un caracter en pantalla
+;Parametros: 
+;char: caracter a desplegar  
+;==============================
+printChar macro char
+	push ax      	;salvamos cualquier dato del usuario
+	push dx
+
+	mov dl, char
+	mov ah, 02h		;seleccionamos el servicio 02h para escritura de un caracter
+	int 21h
+
+	pop dx
+	pop ax			;recuperamos los datos del usuario
+endm
+       
+
+;=========== Macro readStr ============
+;lee una cadena de caracteres 
+;y los deposita en un buffer
+;se finaliza la cadena con la tecla ESC
+;Parametros:
+;buffer: dezplazamiento del buffer
+;numBytes: numero maximo de caracteres del buffer
+;===================================
+readStr macro numBytes, buffer  
+    local esc, leer, back, noback, enter
+	push bx
+    push cx
+    push ax  
+    push si
+	
+	mov cx, numBytes
+	lea bx, buffer
+   
+	xor si,si        ;si = 0
+	leer:    	    
+        mov AH, 01h   ;servicio de lectura de caracter
+        int 21h                     
+        cmp al, 27   ;al == esc ? 
+        je  esc
+        cmp al, 08h ;al == tecla back
+        je back
+        cmp al, 0dh ;al == enter ?
+        je enter
+                           
+        mov [bx+si], al ;se coloca el caracter leido en el buffer
+        inc si          ;incrementamos la posicion del buffer
+        jmp noback
+        
+        enter:
+        mov [bx+si], 0dh ;se coloca un enter en el buffer
+        inc si
+        mov [bx+si], 13 ;se coloca un retorno
+        inc si
+        jmp noback
+        
+        back:
+        inc cx ;la tecla back no cuenta como caracter leido 
+        dec si
+        
+        noback:        
+    loop leer
+    
+    esc:
+    mov [bx+si], "$"  ;se adiciona un simbolo de final de cadena
+     
+	pop si
+	pop ax
+	pop cx
+	pop bx
+
+endm 
 
 ;=========== Macro readFileName ============
-;lee una cadena de caracteres 
+;lee una cadena de caracteres (nombre del fichero)
 ;y los deposita en un buffer
 ;Parametros:
 ;buffer: dezplazamiento del buffer
@@ -97,7 +172,7 @@ createFile macro fileName, handler
 endm
 
 ;============== Macro openFile ==========
-;abre un fichero de texto
+;abre un fichero de texto y obtiene un handler
 ;Parametros 
 ;modo: 0h solo lectura, 1h solo escritura, 2h lectura y escritura            
 ;filename: nombre en memoria del fichero     
@@ -110,7 +185,7 @@ openFile macro filename,modo,handler
     local error, fin ;se definen etiquetas locales a la macro 
     push dx ;se salvan datos anteriores
      
-    mov ah,3dh ;interrupcion para abrir el archivo
+    mov ah,3dh ;funcion para abrir archivos
     mov al,modo  ;0h solo lectura, 1h solo escritura, 2h lectura y escritura
     lea dx, filename ;cargamos el nombre del archivo
     int 21h
@@ -128,7 +203,7 @@ openFile macro filename,modo,handler
 endm
 
 ;============== Macro readFile ==========
-;abre un fichero de texto
+;lee el contenido de un fichero de texto
 ;Parametros 
 ;numbytes: numero de bytes a leer del fichero           
 ;buffer: buffer en se depositaran los caracteres leidos   
@@ -174,8 +249,8 @@ closeFile macro handler
     local error, fin ;etiquetas locales
     push bx ;salvar datos anteriores
     
-    mov ah,3eh
-    mov bx,handler
+    mov ah,3eh ;funcion 3h para cerrar archivos 
+    mov bx,handler ;se carga el manejador del archivo
     int 21h
     
     jc error: ;si hubo error al abrir CF = 1
@@ -187,7 +262,67 @@ closeFile macro handler
     
     fin: 
     pop bx
-endm
+endm    
+
+;================= Macro deleteFile ==============
+;Elimina un fichero de texto
+;Parametros
+;nombre: nombre en memoria del fichero a borrar.
+;Devuelve: 
+;ax: 1 si hubo error, 0 si no hubo error 
+;================================================
+deleteFile macro nombre
+    local error, fin ;etiquetas locales
+    push dx ;salvar datos anteriores
+    
+    mov ah,41h  ;funcion 41h para borrar archivos
+    lea dx,nombre ;se carga el nombre del archivo a borrar
+    int 21h
+    
+    jc error: ;si hubo error al borrar CF = 1
+    mov ax, 0h
+    jmp fin ;si no hubo error ve al final de la macro 
+  
+    error: 
+    mov ax, 1h
+    
+    fin: 
+    pop dx
+endm   
+
+;================= Macro writeFile ==============
+;Escribe una cadena de texto sobre un archivo
+;Parametros
+;numbytes: numero de bytes a escribir
+;handler: manejador del fichero
+;buffer: buffer en memoria con el texto a escribir
+;Devuelve: 
+;ax: 1 si hubo error, 0 si no hubo error 
+;================================================
+writeFile macro numbytes,buffer,handler
+    local error, fin ;etiquetas locales
+    push bx ;salvar datos anteriores 
+    push cx
+    push dx
+    
+    mov ah,40h  ;funcion 40h para escribir ficheros
+    mov bx,handler ;se carga el manejador del fichero
+    mov cx, numbytes ;se cargan el numero de bytes a escribir
+    lea dx, buffer ;se carga la direccion del buffer
+    int 21h
+    
+    jc error: ;si hubo error al borrar CF = 1
+    mov ax, 0h
+    jmp fin ;si no hubo error ve al final de la macro 
+  
+    error: 
+    mov ax, 1h
+    
+    fin: 
+    pop dx
+    pop cx
+    pop bx
+endm 
 
 .model small
 .stack
@@ -218,13 +353,15 @@ endm
     
     ;mensajes al usuario
     msgError db 7,10,10,13, 'El archivo no existe',10,'$'
-    msgExito db 7,10,10,13, 'Archivo creado con exito',10,'$'
+    msgExito db 7,10,10,13, 'Archivo creado con exito',10,'$' 
+    msgDelExito db 7,10,10,13, 'Archivo eliminado con exito',10,'$'
+    msgEsc db 7,10,10,13, 'Confirme su edicion con ta tecla ESC',10,'$'
     msgFin db 10,13,'Programa Terminado','$'
     
     ;variables del archivo
     file db 20 dup(?),  ;nombre del archivo
-    buffer db 1000 dup(?),'$' ;buffer con un amplio espacio para el texto leido
-    handler dw ?
+    handler dw ?   
+    buffer db 1000 dup('$'),'$' ;buffer con un amplio espacio para el texto leido
 
 .code 
 .startup  
@@ -272,29 +409,62 @@ endm
     jmp fin ;si no tecleo alguna opcion valida se va al fin
     
     crear: 
-        print opNombre 
-        readFileName 20,file 
-        createFile file,handler
-        closeFile handler
-        print msgExito        
+        call pedir   ;pedir el nombre del fichero 
+        createFile file,handler  ;crear el fichero
+        closeFile handler  ;cerrar el fichero
+        print msgExito  ;imprimir un mensaje      
         jmp menu
         
     leer: 
-        call pedir
+        call pedir   ;pedir el nombre del fichero
+        openFile file,0h,handler  ;abrir el fichero en solo lectura
         cmp ax, 1 ; si hubo error         
-        je error
+        je error        
         
-        readFile 1000,buffer,handler 
-        print buffer
-        closeFile handler         
+        readFile 1000,buffer,handler   ;leer el fichero 
+        printChar 10   ;se imprime un salto de linea
+        printChar 13   ;se imprime un retorno de linea
+        print buffer    ;imprimir el buffer
+        closeFile handler ;cerrar el fichero 
+        lea si, buffer       
         jmp menu
         
     modificar:
-        mov ax, 3
+        call pedir  ;pedir el nombre del fichero
+        openFile file,2h,handler  ;abrir el fichero en lectura y escritura
+        cmp ax, 1 ; si hubo error         
+        je error 
+        
+        ;se imprime el contenido anterior
+        readFile 1000,buffer,handler   ;leer el fichero
+         
+        printChar 10   ;se imprime un salto de linea
+        printChar 13   ;se imprime un retorno de linea 
+        
+        print buffer    ;imprimir el buffer
+        print msgEsc    ;indicacion al usuario
+        
+        printChar 10   ;se imprime un salto de linea
+        printChar 13   ;se imprime un retorno de linea
+        
+        readStr 1000, buffer ;se pide al usuario el nuevo texto
+        
+        ;se cuenta el numero efectivo de bytes escritos por el usuario
+        lea si,buffer
+        call size          
+        
+        writeFile cx,buffer,handler 
+        closeFile handler
         jmp menu
         
     eliminar:
-        mov ax, 4
+        call pedir   ;pedir el nombre del fichero 
+        deleteFile file  ;eliminar el fichero
+        cmp ax, 1 ; si hubo error         
+        je error
+        
+        print msgDelExito 
+        
         jmp menu
         
     renombrar:
@@ -309,21 +479,20 @@ endm
     
     fin: 
     print msgFin
-    mov ax,4c00h
+    mov ax,4c00h ;funcion 4c para terminar el programa
     int 21h     
     
 .exit
 
 ;======== pedir ===========
 ;pide el nombre del archivo y lo 
-;intenta abrir
+;guarda en memoria
 ;Devuelve: 
 ;ax: 1 si error 0 si no hubo error  
 ;============================== 
 pedir proc near   
     print opNombre 
-    readFileName 20,file
-    openFile file,0h,handler    
+    readFileName 20,file        
     ret    
 endp
 
@@ -342,7 +511,31 @@ readChar PROC NEAR
      
      pop ax  
      ret
-readChar ENDP  
+readChar ENDP 
+
+;======== size ===========
+;obtiene la longitud efectiva de un buffer de texto
+;Parametros      
+;SI: offset del buffer
+;Devuelve: 
+;cx: longitud del buffer  
+;==============================
+size proc near
+   push ax
+   
+   xor cx,cx 
+   init:
+    lodsb  ;lee el primer byte e incrementa si
+    cmp al, '$' ; al == $ 
+    je final 
+    inc cx      ; incrementa cx
+   jmp init
+   
+   final:
+   ;dec cx ;descuenta el ultimo caracter
+   pop ax
+   ret 
+size endp
 
 end
 
