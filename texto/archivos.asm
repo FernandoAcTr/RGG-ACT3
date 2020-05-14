@@ -39,17 +39,17 @@ endm
 ;y los deposita en un buffer
 ;se finaliza la cadena con la tecla ESC
 ;Parametros:
-;buffer: dezplazamiento del buffer
-;numBytes: numero maximo de caracteres del buffer
+;buffer: dezplazamiento del buffer   
+;Devuelve
+;CX: numero de caraceres leidos
 ;===================================
-readStr macro numBytes, buffer  
+readStr macro buffer  
     local esc, leer, back, noback, enter
 	push bx
-    push cx
     push ax  
     push si
 	
-	mov cx, numBytes
+	xor cx, cx
 	lea bx, buffer
    
 	xor si,si        ;si = 0
@@ -58,13 +58,14 @@ readStr macro numBytes, buffer
         int 21h                     
         cmp al, 27   ;al == esc ? 
         je  esc
-        cmp al, 08h ;al == tecla back
+        cmp al, 08h ;al == tecla back ?
         je back
         cmp al, 0dh ;al == enter ?
         je enter
                            
         mov [bx+si], al ;se coloca el caracter leido en el buffer
-        inc si          ;incrementamos la posicion del buffer
+        inc si          ;incrementamos la posicion del buffer  
+        inc cx ;cx++
         jmp noback
         
         enter:
@@ -77,18 +78,16 @@ readStr macro numBytes, buffer
        
         
         back:
-        inc cx ;la tecla back no cuenta como caracter leido 
         dec si
         
         noback:        
-    loop leer
+    jmp leer
     
     esc:
     mov [bx+si], "$"  ;se adiciona un simbolo de final de cadena
      
 	pop si
 	pop ax
-	pop cx
 	pop bx
 
 endm 
@@ -247,11 +246,11 @@ readFile macro numbytes,buffer,handler
     lea dx,buffer ;se carga el buffer 
     int 21h
     jc error: ;si hubo error al abrir CF = 1  
-    mov ax, 0h
+    ;mov ax, 0h
     jmp fin ;si no hubo error ve al final de la macro 
   
     error: 
-    mov ax, 1
+    ;mov ax, 1
     
     fin: 
     pop dx
@@ -335,11 +334,11 @@ writeFile macro numbytes,buffer,handler
     int 21h
     
     jc error: ;si hubo error al borrar CF = 1
-    mov ax, 0h
+    ;mov ax, 0h
     jmp fin ;si no hubo error ve al final de la macro 
   
     error: 
-    mov ax, 1h
+    ;mov ax, 1h
     
     fin: 
     pop dx
@@ -417,7 +416,8 @@ endm
     ;variables del archivo
     file db 20 dup(?),  ;nombre del archivo 
     newFile db 20 dup(?),  ;nombre del nuevo archivo usado para renombrar
-    handler dw ?   
+    handler dw ? 
+    length dw 0  
     buffer db 1000 dup('$'),'$' ;buffer con un amplio espacio para el texto leido
 
 .code 
@@ -486,7 +486,8 @@ endm
         cmp ax, 1 ; si hubo error         
         je error        
         
-        readFile $-buffer,buffer,handler   ;leer el fichero 
+        readFile $-buffer,buffer,handler   ;leer el fichero     
+        mov length, ax
         printChar 10   ;se imprime un salto de linea 
         printChar 10  
       
@@ -510,7 +511,7 @@ endm
         je error 
         
         ;se imprime el contenido anterior
-        readFile 1000,buffer,handler   ;leer el fichero
+        readFile $-buffer,buffer,handler   ;leer el fichero
          
         printChar 10   ;se imprime un salto de linea
         printChar 10
@@ -520,13 +521,9 @@ endm
         
         printChar 10   ;se imprime un salto de linea 
                 
-        readStr 1000, buffer ;se pide al usuario el nuevo texto maximo 1000 bytes
-        
-        ;se cuenta el numero efectivo de bytes escritos por el usuario
-        lea si,buffer
-        call size          
-        
-        writeFile cx,buffer,handler 
+        readStr buffer ;se pide al usuario el nuevo texto
+                        
+        writeFile cx,buffer,handler  ;cx contiene el numero de caracteres leidos que seran escritos  
         closeFile handler
         jmp menu
         
