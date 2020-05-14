@@ -486,7 +486,7 @@ endm
         cmp ax, 1 ; si hubo error         
         je error        
         
-        readFile 1000,buffer,handler   ;leer el fichero 
+        readFile $-buffer,buffer,handler   ;leer el fichero 
         printChar 10   ;se imprime un salto de linea 
         printChar 10  
       
