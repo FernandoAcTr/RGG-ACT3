@@ -85,6 +85,7 @@ readStr macro buffer
     
     esc:
     mov [bx+si], "$"  ;se adiciona un simbolo de final de cadena
+    dec cx ;la tecla esc no cuenta como caracter escrito
      
 	pop si
 	pop ax
