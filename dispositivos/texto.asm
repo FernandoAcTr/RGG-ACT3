@@ -1,3 +1,4 @@
+
 ;Programa que pinta la pantalla de azul y despliega opciones
 ;para cambiar el modo actual de texto, esto cambia la resolucion de la consola en modo de video de texto
 ;se usan funciones de la interrupcion 10h para pintar la pantalla, cambiar la ubicacion del cursor y cambiar el modo 

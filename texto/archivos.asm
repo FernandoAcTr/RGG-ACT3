@@ -388,8 +388,8 @@ endm
     cabeza4 db 10,13,'Integrantes:','$'
     int1 db 10,13,'Luis Fernando Acosta Tovar','$'    
     int2 db 10,13,'Leonardo Hernandez Ojeda','$'
-    int3 db 10,13,'Juan Pablo Marcial','$'
-    int4 db 10,13,'Saul Arriaga',10,'$' 
+    int3 db 10,13,'Juan Pablo Marcial Avila','$'
+    int4 db 10,13,'Saul Garcia Hernandez',10,'$' 
     
     ;definir menu
     titulo db 10,13, 'Operaciones con Archivos: ',10,'$'
@@ -416,8 +416,7 @@ endm
     ;variables del archivo
     file db 20 dup(?),  ;nombre del archivo 
     newFile db 20 dup(?),  ;nombre del nuevo archivo usado para renombrar
-    handler dw ? 
-    length dw 0  
+    handler dw ?   
     buffer db 1000 dup('$'),'$' ;buffer con un amplio espacio para el texto leido
 
 .code 
@@ -487,7 +486,6 @@ endm
         je error        
         
         readFile $-buffer,buffer,handler   ;leer el fichero     
-        mov length, ax
         printChar 10   ;se imprime un salto de linea 
         printChar 10  
       
