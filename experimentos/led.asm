@@ -22,7 +22,7 @@ COD SEGMENT
     bucle: 
     
     MOV AH,1
-    MOV DL,0FFH
+    ;MOV DL,0FFH
     INT 21H
     CMP AL,'S'
     JE SALIR
