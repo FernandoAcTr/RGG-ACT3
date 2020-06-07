@@ -20,10 +20,10 @@ endm
 .data    
 
     msg1 DB 10,13,'Selecciona el producto de la maquina','$'
-    msg2 DB 10,13,'1. Gansito','$'
-    msg3 DB 10,13,'2. Mamut','$'   
-    msg4 DB 10,13,'3. Panditas','$'
-    msg5 DB 10,13,'4. Bubulubu','$'
+    msg2 DB 10,13,'1. Panditas','$'
+    msg3 DB 10,13,'2. Gansito','$'   
+    msg4 DB 10,13,'3. Chocoroles','$'
+    msg5 DB 10,13,'4. Barritas','$'
     msgOp DB 10,13,7,'Opcion: ', '$' 
     msgInv DB 10,13,7,'Solo una de las 4 opciones ', '$'
     MENSAJE DW 0
@@ -79,8 +79,8 @@ girar proc near
     ;int 15H    
     
     ;start delay
-     mov bp, 43690 ;(AAAAH)     
-     mov si, 43690 ;(AAAAH) 
+     mov bp, 21845 ;(5555H)     
+     mov si, 21845 ;(5555H) 
      delay:
         dec bp
         nop
