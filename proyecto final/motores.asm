@@ -26,7 +26,6 @@ endm
     msg5 DB 10,13,'4. Barritas','$'
     msgOp DB 10,13,7,'Opcion: ', '$' 
     msgInv DB 10,13,7,'Solo una de las 4 opciones ', '$'
-    MENSAJE DW 0
 
 .code 
 .startup
@@ -59,7 +58,7 @@ endm
 .exit
 
 ;======== girar ===============
-;procedimientoque escribe el valor de AL en el puerto paralelo 
+;procedimiento que escribe el valor de AL en el puerto paralelo 
 ;Parametros: 
 ;al: Valor a escribir en el puerto 
 ;============================== 
@@ -100,7 +99,7 @@ girar proc near
 girar endp    
 
 ;======== readNum ===========
-;lee un numero ASCII del teclado y regresa como decimal
+;lee un numero ASCII del teclado y lo regresa como decimal
 ;Devuelve: 
 ;bl: numero leido  
 ;============================== 
@@ -116,7 +115,7 @@ readDigit PROC NEAR
      ret
 readDigit ENDP 
 
-;======== readNum ===========
+;======== convertir ===========
 ;convierte la opcion tecleada por el usuario 
 ;a un numero para mandar al puerto    
 ;Paramtros
